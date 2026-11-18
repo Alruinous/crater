@@ -33,6 +33,10 @@ import {
 
 import { Tree, TreeDataItem } from '@/components/file/lazy-file-tree'
 
+import { useResourcePathPolicy } from '@/hooks/use-resource-path-policy'
+
+import { isBlockedResourcePath } from '@/utils/resource-path-policy'
+
 import { cn } from '@/lib/utils'
 
 export const FileSelectDialog = ({
@@ -42,6 +46,7 @@ export const FileSelectDialog = ({
   allowSelectFile = true,
   isrw = false,
   title,
+  resourcePath = false,
 }: {
   value?: string
   handleSubmit: (path: TreeDataItem) => void
@@ -49,13 +54,17 @@ export const FileSelectDialog = ({
   allowSelectFile?: boolean
   isrw?: boolean
   title?: string
+  resourcePath?: boolean
 }) => {
   const { t } = useTranslation()
+  const policy = useResourcePathPolicy(resourcePath)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [content, setContent] = useState<TreeDataItem | undefined>()
+  const blocked =
+    resourcePath && !!content && isBlockedResourcePath(content.id, policy.blockedPaths)
 
   const handleSelect = () => {
-    if (content) {
+    if (content && !blocked) {
       handleSubmit(content)
       toast.info(t('fileSelectDialog.selectedFile', { id: content.id }))
       setIsDialogOpen(false)
@@ -105,12 +114,20 @@ export const FileSelectDialog = ({
               />
             </div>
           </div>
+          {blocked && (
+            <p role="alert" className="text-destructive text-sm">
+              {t('resourceMount.blocked')}
+            </p>
+          )}
+          {resourcePath && policy.unavailable && (
+            <p role="status">{t('resourceMount.policyUnavailable')}</p>
+          )}
           <DialogFooter className="gap-2 sm:justify-end sm:space-x-0">
             <Button
               type="button"
               className="w-full"
               onClick={handleSelect}
-              disabled={!content || (!allowSelectFile && !content.isdir)}
+              disabled={!content || blocked || (!allowSelectFile && !content.isdir)}
             >
               {t('fileSelectDialog.confirmSelection', { name: content?.name })}
             </Button>

@@ -103,6 +103,9 @@ postgres:
 # Persistent volume claim and path prefix configurations
 # Required: All PVC names and prefix paths must be specified
 storage:
+  # Additional exact logical roots; subdirectories remain allowed.
+  # For legacy collections: [public/LLM, public/DataSets, public/cv_datasets].
+  blockedPublicPaths: []
   quota:
     # CephFS-only feature. Keep false for NFS and other storage backends.
     enabled: false

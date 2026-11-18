@@ -158,3 +158,9 @@ export const apiAdminCancelShareWithQueue = (CSQ: cancelSharedQueueResp) =>
 
 export const apiDatasetUpdate = (dataset: DatasetReq & { datasetId: number }) =>
   apiV1Post<IResponse<string>>('dataset/update', dataset)
+
+export interface ResourcePathPolicy {
+  blockedPaths: string[]
+}
+export const apiGetResourcePathPolicy = () =>
+  apiV1Get<IResponse<ResourcePathPolicy>>('dataset/path-policy')

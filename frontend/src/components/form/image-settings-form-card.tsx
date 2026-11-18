@@ -229,6 +229,7 @@ function VolumeMountsSection<T extends FieldValues>({
                       <FormLabel>选择文件</FormLabel>
                       <FormControl>
                         <FileSelectDialog
+                          resourcePath
                           value={field.value}
                           handleSubmit={(item: TreeDataItem) => {
                             field.onChange(item.id)

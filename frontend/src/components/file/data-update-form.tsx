@@ -208,6 +208,7 @@ export function DatasetUpdateForm({ type, initialData, onSuccess }: UpdateFormPr
                       </FormLabel>
                       <FormControl>
                         <FileSelectDialog
+                          resourcePath
                           value={field.value.split('/').pop()}
                           handleSubmit={(item) => {
                             field.onChange(item.id)

@@ -184,6 +184,7 @@ export function DataCreateForm({ closeSheet, type }: DataCreateFormProps) {
                     </FormLabel>
                     <FormControl>
                       <FileSelectDialog
+                        resourcePath
                         value={field.value.split('/').pop()}
                         isrw={false}
                         title={`选择${dataTypeLabel}地址`}

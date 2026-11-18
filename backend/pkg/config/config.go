@@ -154,6 +154,8 @@ type Config struct {
 	// Storage contains persistent volume claim and path prefix configurations.
 	// Required: All PVC names and prefix paths must be specified.
 	Storage struct {
+		// BlockedPublicPaths adds exact logical roots excluded from user resource selection.
+		BlockedPublicPaths []string `json:"blockedPublicPaths,omitempty"`
 		// Quota configures how CephFS directory quotas are read and written.
 		Quota struct {
 			// Enabled explicitly enables CephFS usage and quota management.

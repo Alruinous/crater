@@ -40,6 +40,16 @@ type VolumeMount struct {
 func ResolveVolumeMount(c context.Context, token JWTMessage, vm VolumeMount, source JobSource) (
 	mount v1.VolumeMount, err error,
 ) {
+	if vm.Type == FileType {
+		normalized, err := NormalizeResourcePath(vm.SubPath)
+		if err != nil {
+			return v1.VolumeMount{}, err
+		}
+		vm.SubPath = normalized
+		if err := ValidateResourcePath(vm.SubPath); err != nil {
+			return v1.VolumeMount{}, err
+		}
+	}
 	// Get PVC names from config
 	pvc := config.GetConfig().Storage.PVC
 	rwxPVCName, roxPVCName := pvc.ReadWriteMany, pvc.ReadWriteMany
@@ -52,6 +62,9 @@ func ResolveVolumeMount(c context.Context, token JWTMessage, vm VolumeMount, sou
 		// Get dataset path from database
 		datasetPath, editable, err := GetSubPathByDatasetVolume(c, token.UserID, vm.DatasetID)
 		if err != nil {
+			return v1.VolumeMount{}, err
+		}
+		if err := ValidateResourcePath(datasetPath); err != nil {
 			return v1.VolumeMount{}, err
 		}
 		// If editable is true, use RWX PVC

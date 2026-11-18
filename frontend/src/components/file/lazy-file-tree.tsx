@@ -18,7 +18,7 @@
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ChevronRight, FileDigitIcon, FolderIcon, type LucideIcon } from 'lucide-react'
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useResizeObserver } from 'usehooks-ts'
 
@@ -166,22 +166,9 @@ const TreeItem = ({
       name: level === 0 ? getFolderTitle(t, data.name) : data.name,
       icon: data.isdir ? FolderIcon : FileDigitIcon,
       isdir: data.isdir,
-      hasChildren: data.isdir && data.size > 0,
+      hasChildren: data.isdir,
     }
   }, [currentPath, data, level, t])
-
-  useEffect(() => {
-    if (data.isdir && data.size > 0) {
-      // create default childrens with length of data.size
-      const newChildren: FileItem[] = Array.from({ length: data.size }, () => ({
-        isdir: false,
-        name: '',
-        size: 0,
-        modifytime: '',
-      }))
-      setChildren(newChildren)
-    }
-  }, [data])
 
   const [children, setChildren] = React.useState<FileItem[]>([])
   const [childrenInitialized, setChildrenInitialized] = React.useState(false)

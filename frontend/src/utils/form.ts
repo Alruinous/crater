@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import i18n from 'i18next'
 import { z } from 'zod'
 
 import { MetadataFormType } from '@/components/form/types'
@@ -136,32 +137,59 @@ export enum VolumeMountType {
   DataType,
 }
 
-export const volumeMountsSchema = z.array(
-  z.object({
-    type: z.number().int(),
-    subPath: z.string().min(1, {
-      message: '挂载源不能为空',
-    }),
-    datasetID: z.number().int().nonnegative().optional(),
-    mountPath: z
-      .string()
-      .min(1, {
-        message: '挂载到容器中的路径不能为空',
-      })
-      .refine((value) => value.startsWith('/'), {
-        message: '路径需以单个斜杠 `/` 开头',
-      })
-      .refine((value) => !value.includes('..'), {
-        message: '禁止使用相对路径 `..`',
-      })
-      .refine((value) => !value.includes('//'), {
-        message: '避免使用多个连续的斜杠 `//`',
-      })
-      .refine((value) => value !== '/', {
-        message: '禁止挂载到根目录 `/`',
+export const volumeMountsSchema = z
+  .array(
+    z.object({
+      type: z.number().int(),
+      subPath: z.string().min(1, {
+        message: '挂载源不能为空',
       }),
+      datasetID: z.number().int().nonnegative().optional(),
+      mountPath: z
+        .string()
+        .min(1, {
+          message: '挂载到容器中的路径不能为空',
+        })
+        .refine((value) => value.startsWith('/'), {
+          message: '路径需以单个斜杠 `/` 开头',
+        })
+        .refine((value) => !value.includes('..'), {
+          message: '禁止使用相对路径 `..`',
+        })
+        .refine((value) => !value.includes('//'), {
+          message: '避免使用多个连续的斜杠 `//`',
+        })
+        .refine((value) => value !== '/', {
+          message: '禁止挂载到根目录 `/`',
+        }),
+    })
+  )
+  .superRefine((mounts, ctx) => {
+    const indicesByPath = new Map<string, number[]>()
+    mounts.forEach((mount, index) => {
+      // Treat trailing slashes and /./ as the same container mount point.
+      const path =
+        '/' +
+        mount.mountPath
+          .split('/')
+          .filter((part) => part && part !== '.')
+          .join('/')
+      if (path === '/') return
+      const indices = indicesByPath.get(path) ?? []
+      indices.push(index)
+      indicesByPath.set(path, indices)
+    })
+    for (const [path, indices] of indicesByPath) {
+      if (indices.length < 2) continue
+      for (const index of indices) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [index, 'mountPath'],
+          message: i18n.t('mountSelection.duplicateMountPoint', { path }),
+        })
+      }
+    }
   })
-)
 
 export type VolumeMountsSchema = z.infer<typeof volumeMountsSchema>
 

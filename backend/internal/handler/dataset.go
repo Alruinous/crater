@@ -46,6 +46,7 @@ func (mgr *DatasetMgr) RegisterPublic(g *gin.RouterGroup) {
 }
 
 func (mgr *DatasetMgr) RegisterProtected(g *gin.RouterGroup) {
+	g.GET("/path-policy", mgr.GetPathPolicy)
 	g.GET("/mydataset", mgr.GetDatasets)
 	g.GET("/:datasetId/usersNotIn", mgr.ListUsersOutOfDataset)
 	g.GET("/:datasetId/usersIn", mgr.ListUserOfDataset)
@@ -294,6 +295,10 @@ func (mgr *DatasetMgr) CreateDataset(c *gin.Context) {
 		resputil.Error(c, urlerr.Error(), resputil.NotSpecified)
 		return
 	}
+	if err := util.ValidateResourcePath(realURL); err != nil {
+		resputil.HandleError(c, err)
+		return
+	}
 	db := query.Use(query.GetDB())
 	err := db.Transaction(func(tx *query.Query) error {
 		d := tx.Dataset
@@ -342,6 +347,12 @@ func (mgr *DatasetMgr) CreateDataset(c *gin.Context) {
 
 // 正则去除前缀/后的url,重定向到实际位置，如在user后加上user.space的路径
 func redirectDatasetURL(c *gin.Context, url string, token util.JWTMessage) (string, error) {
+	var normalizeErr error
+	url, normalizeErr = util.NormalizeResourcePath(url)
+	if normalizeErr != nil {
+		return "", normalizeErr
+	}
+
 	if strings.HasPrefix(url, "public") {
 		subPath := filepath.Clean(config.GetConfig().Storage.Prefix.Public + strings.TrimPrefix(url, "public"))
 		return subPath, nil
@@ -860,6 +871,10 @@ func (mgr *DatasetMgr) UpdateDataset(c *gin.Context) {
 	}
 	if dataset.UserID != token.UserID && token.RolePlatform != model.RoleAdmin {
 		resputil.Error(c, "you has no permission to update describe", resputil.InvalidRequest)
+		return
+	}
+	if err := util.ValidateResourcePath(realURL); err != nil {
+		resputil.HandleError(c, err)
 		return
 	}
 	tempExtra := dataset.Extra.Data()
